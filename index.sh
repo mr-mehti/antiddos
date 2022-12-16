@@ -56,3 +56,92 @@ iptables -A OUTPUT -m state --state INVALID -j DROP
 
 iptables -A INPUT -p tcp -m tcp --tcp-flags RST RST -m limit --limit 2/second --limit-burst 2 -j ACCEPT
 
+#iptables -N http-flood
+
+#iptables -A INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 1 -j http-flood
+
+#iptables -A INPUT -p tcp --syn --dport 443 -m connlimit --connlimit-above 1 -j http-flood
+
+#iptables -A http-flood -m limit --limit 10/s --limit-burst 10 -j RETURN
+
+#iptables -A http-flood -m limit --limit 1/s --limit-burst 10 -j LOG --log-prefix "HTTP-FLOOD "
+
+#iptables -A http-flood -j DROP
+
+
+#iptables -A INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 20 -j DROP
+
+#iptables -A INPUT -p tcp --syn --dport 443 -m connlimit --connlimit-above 20 -j DROP
+
+#iptables -A INPUT -p tcp --dport 80 -i eth0 -m state --state NEW -m recent --set
+
+#iptables -I INPUT -p tcp --dport 80 -m state --state NEW -m recent --update --seconds 10 --hitcount 20 -j DROP
+
+#iptables -A INPUT -p tcp --dport 443 -i eth0 -m state --state NEW -m recent --set
+
+#iptables -I INPUT -p tcp --dport 443 -m state --state NEW -m recent --update --seconds 10 --hitcount 20 -j DROP
+
+#iptables -A INPUT -p tcp --syn -m limit --limit 10/s --limit-burst 13 -j DROP
+
+#iptables -N flood
+
+#iptables -A flood -j LOG --log-prefix "FLOOD "
+
+#iptables -A flood -j DROP
+
+
+iptables -t filter -N syn-flood
+
+iptables -t filter -A INPUT -i eth0 -p tcp --syn -j syn-flood
+
+iptables -t filter -A syn-flood -m limit --limit 1/sec --limit-burst 4 -j RETURN
+
+iptables -t filter -A syn-flood -j LOG \
+
+--log-prefix "IPTABLES SYN-FLOOD:"
+
+iptables -t filter -A syn-flood -j DROP
+
+
+iptables -t mangle -A PREROUTING -m conntrack --ctstate INVALID -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,SYN FIN,SYN -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,RST FIN,RST -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,ACK FIN -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,URG URG -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,FIN FIN -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,PSH PSH -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL ALL -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL NONE -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL FIN,PSH,URG -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,FIN,PSH,URG -j DROP
+
+iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+
+iptables -t mangle -A PREROUTING -p icmp -j DROP
+
+iptables -A INPUT -p tcp -m connlimit --connlimit-above 80 -j REJECT --reject-with tcp-reset
+
+iptables -A INPUT -p tcp -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT
+
+iptables -A INPUT -p tcp -m conntrack --ctstate NEW -j DROP
+
+iptables -t mangle -A PREROUTING -f -j DROP
+
+iptables -A INPUT -p tcp --tcp-flags RST RST -m limit --limit 2/s --limit-burst 2 -j ACCEPT
+
+iptables -A INPUT -p tcp --tcp-flags RST RST -j DROP
+
